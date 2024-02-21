@@ -17,11 +17,9 @@ type createWalletResponse struct {
 	Balance int64  `json:"balance"`
 }
 
-func CreateWalletHandler(ws *application.WalletService) http.Handler {
+func CreateWalletHandler(ws *application.WalletService, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			userId := r.PathValue("userId")
-
 			var req createWalletRequest
 			err := json.NewDecoder(r.Body).Decode(&req)
 			if err != nil {
@@ -29,6 +27,7 @@ func CreateWalletHandler(ws *application.WalletService) http.Handler {
 				return
 			}
 
+			userId := r.PathValue("userId")
 			if ws.HasWallet(userId) {
 				jsonError(w, "user already has a wallet created.", http.StatusConflict)
 				return
@@ -36,9 +35,8 @@ func CreateWalletHandler(ws *application.WalletService) http.Handler {
 
 			wallet, err := ws.CreateWallet(userId, req.Amount)
 			if err != nil {
-				// todo log error
-				log.Println(err)
-				http.Error(w, "Something went wrong", http.StatusInternalServerError)
+				logger.Printf("error creating wallet: %s\n", err)
+				jsonError(w, "something went wrong", http.StatusInternalServerError)
 				return
 			}
 
