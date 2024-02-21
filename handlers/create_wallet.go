@@ -27,12 +27,16 @@ func CreateWalletHandler(ws *application.WalletService, logger *log.Logger) http
 				return
 			}
 
+			if req.Amount < 0 {
+				jsonError(w, "`amount` must be positive", http.StatusBadRequest)
+				return
+			}
+
 			userId := r.PathValue("userId")
 			if ws.HasWallet(userId) {
 				jsonError(w, "user already has a wallet created.", http.StatusConflict)
 				return
 			}
-
 			wallet, err := ws.CreateWallet(userId, req.Amount)
 			if err != nil {
 				logger.Printf("error creating wallet: %s\n", err)
