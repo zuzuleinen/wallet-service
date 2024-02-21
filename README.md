@@ -27,6 +27,8 @@ docker run -p 8080:8080 walletservice
 
 ## Using the service
 
+For simplicity user ids are simple strings, like `andrei`. Amounts are in cents.
+
 Check Health of the Service:
 
 ```shell
