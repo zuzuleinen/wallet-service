@@ -59,7 +59,7 @@ func (s *WalletService) GetWallet(userID string) *domain.Wallet {
 	ts := s.transactionsRepo.UserTransactions(userID)
 	w := domain.NewWallet(userID)
 	for _, v := range ts {
-		w.AddFunds(v.Amount)
+		w.AddFunds(v.Amount) // todo handle error
 	}
 	return w
 }

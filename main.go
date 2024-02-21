@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -25,13 +26,13 @@ type Config struct {
 
 func main() {
 	ctx := context.Background()
-	if err := run(ctx); err != nil {
+	if err := run(ctx, os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context) error {
+func run(ctx context.Context, out io.Writer) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
@@ -54,7 +55,8 @@ func run(ctx context.Context) error {
 
 	ws := application.NewWalletService(infrastructure.NewTransactionRepository(db))
 
-	srv := NewServer(ws)
+	logger := log.New(out, "", log.LstdFlags)
+	srv := NewServer(ws, logger)
 	httpServer := &http.Server{
 		Addr:    net.JoinHostPort(cfg.Host, cfg.Port),
 		Handler: srv,
@@ -85,16 +87,16 @@ func run(ctx context.Context) error {
 	return nil
 }
 
-func NewServer(ws *application.WalletService) http.Handler {
+func NewServer(ws *application.WalletService, logger *log.Logger) http.Handler {
 	mux := http.NewServeMux()
-	addRoutes(mux, ws)
+	addRoutes(mux, ws, logger)
 
 	var handler http.Handler = mux
 	return handler
 }
 
-func addRoutes(mux *http.ServeMux, ws *application.WalletService) {
-	mux.Handle("/health", handlers.HealthHandler())
+func addRoutes(mux *http.ServeMux, ws *application.WalletService, logger *log.Logger) {
+	mux.Handle("/health", handlers.HealthHandler(logger))
 	mux.Handle("GET /wallet/{userId}", handlers.GetWalletHandler(ws))
 	mux.Handle("POST /wallet/{userId}", handlers.CreateWalletHandler(ws))
 	mux.Handle("POST /add-funds/{userId}", handlers.AddFundsHandler(ws))

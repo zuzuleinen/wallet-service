@@ -15,10 +15,13 @@ func GetWalletHandler(ws *application.WalletService) http.Handler {
 		func(w http.ResponseWriter, r *http.Request) {
 			userId := r.PathValue("userId")
 
-			wallet := ws.GetWallet(userId)
+			if !ws.HasWallet(userId) {
+				jsonError(w, "wallet not found", http.StatusNotFound)
+				return
+			}
 
 			var resp getWalletResponse
-			resp.Balance = wallet.Balance()
+			resp.Balance = ws.GetWallet(userId).Balance()
 
 			jsonResponse(w, resp)
 		},
