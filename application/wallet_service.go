@@ -1,7 +1,9 @@
 package application
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"wallet-service/domain"
@@ -21,22 +23,40 @@ func NewWalletService(transactionsRepo *infrastructure.TransactionRepository) *W
 	}
 }
 
-func (ws *WalletService) HandleFunds(reference string, amount int64, userID string) error {
-	w := ws.GetWallet(userID)
-	err := w.AddFunds(amount)
-	if err != nil {
+func (s *WalletService) HandleFunds(reference string, amount int64, userID string) error {
+	s.doneWG.Add(1)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer s.doneWG.Done()
+		defer close(errChan)
+
+		w := s.GetWallet(userID)
+		err := w.AddFunds(amount)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		err = s.transactionsRepo.AddTransaction(uuid.New().String(), userID, reference, amount)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	select {
+	case err := <-errChan:
 		return err
 	}
-	return ws.transactionsRepo.AddTransaction(uuid.New().String(), userID, reference, amount)
 }
 
-func (ws *WalletService) HasWallet(userID string) bool {
-	ts := ws.transactionsRepo.UserTransactions(userID)
-	return len(ts) > 0 // todo can do a count here instead of fetching all
+func (s *WalletService) HasWallet(userID string) bool {
+	ts := s.transactionsRepo.UserTransactions(userID)
+	return len(ts) > 0
 }
 
-func (ws *WalletService) GetWallet(userID string) *domain.Wallet {
-	ts := ws.transactionsRepo.UserTransactions(userID)
+func (s *WalletService) GetWallet(userID string) *domain.Wallet {
+	ts := s.transactionsRepo.UserTransactions(userID)
 	w := domain.NewWallet(userID)
 	for _, v := range ts {
 		w.AddFunds(v.Amount)
@@ -44,16 +64,50 @@ func (ws *WalletService) GetWallet(userID string) *domain.Wallet {
 	return w
 }
 
-func (ws *WalletService) CreateWallet(userID string, amount int64) (*domain.Wallet, error) {
-	w := ws.GetWallet(userID)
-	err := w.AddFunds(amount)
-	if err != nil {
-		return &domain.Wallet{}, err
-	}
+func (s *WalletService) CreateWallet(userID string, amount int64) (*domain.Wallet, error) {
+	s.doneWG.Add(1)
 
-	if err := ws.transactionsRepo.AddTransaction(uuid.New().String(), userID, fmt.Sprintf("initialTopup-%s", userID), amount); err != nil {
-		return &domain.Wallet{}, err
-	}
+	walletChan := make(chan *domain.Wallet, 1)
+	errChan := make(chan error, 1)
 
-	return ws.GetWallet(userID), nil
+	go func() {
+		defer s.doneWG.Done()
+
+		w := s.GetWallet(userID)
+		err := w.AddFunds(amount)
+		if err != nil {
+			errChan <- err
+			close(errChan)
+		}
+
+		if err = s.transactionsRepo.AddTransaction(uuid.New().String(), userID, fmt.Sprintf("initialTopup-%s", userID), amount); err != nil {
+			errChan <- err
+			close(errChan)
+		}
+		walletChan <- s.GetWallet(userID)
+		close(walletChan)
+	}()
+
+	select {
+	case wallet := <-walletChan:
+		return wallet, nil
+	case err := <-errChan:
+		return nil, err
+	}
+}
+
+func (s *WalletService) Stop(ctx context.Context) {
+	log.Println("waiting for wallet service to finish")
+	doneChan := make(chan struct{})
+	go func() {
+		s.doneWG.Wait()
+		close(doneChan)
+	}()
+
+	select {
+	case <-ctx.Done():
+		log.Println("context done earlier")
+	case <-doneChan:
+		log.Println("wallet service stopped")
+	}
 }
