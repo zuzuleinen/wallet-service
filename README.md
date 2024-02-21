@@ -2,7 +2,8 @@
 
 ## Installation
 
-You need `sqlite3` installed and `curl` if you want to try the examples from bellow.
+You need `sqlite3` installed and `curl` if you want to try the examples from bellow. Then you can either run with go run
+or build the binary
 
 ```shell
 go run main.go
@@ -12,6 +13,7 @@ or
 
 ```shell
 go build
+./wallet-service
 ```
 
 A Dockerfile is also provided to run the project:
@@ -19,8 +21,8 @@ A Dockerfile is also provided to run the project:
 ```shell
 git clone git@github.com:zuzuleinen/wallet-service.git
 cd wallet-service
-docker build -t codetest .
-docker run -p 8080:8080 lastbuildcode
+docker build -t walletservice .
+docker run -p 8080:8080 walletservice
 ```
 
 ## Using the service
