@@ -27,7 +27,7 @@ docker run -p 8080:8080 walletservice
 
 ## Using the service
 
-For simplicity user ids are simple strings, like `andrei`. Amounts are in cents.
+For simplicity, user ids are simple strings, like `andrei`. Amounts are in cents.
 
 Check Health of the Service:
 
@@ -48,6 +48,9 @@ curl http://localhost:8080/wallet/andrei
 ```
 
 Add funds to a wallet. Make sure the `reference` field is unique:
+A `reference` contains information about the context in which this amount is added/removed. For
+example: `wonbet-111`, `witraw-222`, where the first part is the event and second it a unique id. I don't do any
+validation for the format, but good when debugging.
 
 ```shell
 curl -X POST -H "Content-Type: application/json" -d '{"amount": 10,"reference":"wonbet-1"}' http://localhost:8080/add-funds/andrei
