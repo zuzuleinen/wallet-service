@@ -64,7 +64,7 @@ func run(ctx context.Context, out io.Writer) error {
 		Handler: srv,
 	}
 	go func() {
-		log.Printf("listening on %s\n", httpServer.Addr)
+		log.Printf("server started on %s\n", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Fprintf(os.Stderr, "error listening and serving: %s\n", err)
 		}
