@@ -53,9 +53,11 @@ func run(ctx context.Context, out io.Writer) error {
 		sqlDB.Close()
 	}()
 
-	ws := application.NewWalletService(infrastructure.NewTransactionRepository(db))
-
+	// Init logger and WalletService
 	logger := log.New(out, "", log.LstdFlags)
+	ws := application.NewWalletService(infrastructure.NewTransactionRepository(db), logger)
+
+	// Start server
 	srv := NewServer(ws, logger)
 	httpServer := &http.Server{
 		Addr:    net.JoinHostPort(cfg.Host, cfg.Port),

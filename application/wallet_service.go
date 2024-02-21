@@ -15,11 +15,13 @@ import (
 type WalletService struct {
 	transactionsRepo *infrastructure.TransactionRepository
 	doneWG           sync.WaitGroup
+	logger           *log.Logger
 }
 
-func NewWalletService(transactionsRepo *infrastructure.TransactionRepository) *WalletService {
+func NewWalletService(transactionsRepo *infrastructure.TransactionRepository, logger *log.Logger) *WalletService {
 	return &WalletService{
 		transactionsRepo: transactionsRepo,
+		logger:           logger,
 	}
 }
 
@@ -97,7 +99,8 @@ func (s *WalletService) CreateWallet(userID string, amount int64) (*domain.Walle
 }
 
 func (s *WalletService) Stop(ctx context.Context) {
-	log.Println("waiting for wallet service to finish")
+	s.logger.Println("waiting for wallet service to finish")
+
 	doneChan := make(chan struct{})
 	go func() {
 		s.doneWG.Wait()
@@ -106,8 +109,8 @@ func (s *WalletService) Stop(ctx context.Context) {
 
 	select {
 	case <-ctx.Done():
-		log.Println("context done earlier")
+		s.logger.Println("context done earlier")
 	case <-doneChan:
-		log.Println("wallet service stopped")
+		s.logger.Println("wallet service stopped")
 	}
 }
