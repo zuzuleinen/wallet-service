@@ -99,6 +99,6 @@ func addRoutes(mux *http.ServeMux, ws *application.WalletService, logger *log.Lo
 	mux.Handle("/health", handlers.HealthHandler(logger))
 	mux.Handle("GET /wallet/{userId}", handlers.GetWalletHandler(ws))
 	mux.Handle("POST /wallet/{userId}", handlers.CreateWalletHandler(ws))
-	mux.Handle("POST /add-funds/{userId}", handlers.AddFundsHandler(ws))
+	mux.Handle("POST /add-funds/{userId}", handlers.AddFundsHandler(ws, logger))
 	mux.Handle("POST /remove-funds/{userId}", handlers.RemoveFundsHandler(ws))
 }

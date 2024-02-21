@@ -13,14 +13,16 @@ type addFundsRequest struct {
 	Reference string `json:"reference"`
 }
 
-func AddFundsHandler(ws *application.WalletService) http.Handler {
+func AddFundsHandler(ws *application.WalletService, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			userId := r.PathValue("userId")
+
 			var req addFundsRequest
 			err := json.NewDecoder(r.Body).Decode(&req)
 			if err != nil {
-				http.Error(w, "Failed to parse request body", http.StatusBadRequest)
+				logger.Printf("error decoding request: %s\n", err)
+				jsonError(w, "invalid request body", http.StatusBadRequest)
 				return
 			}
 			if req.Amount < 0 {
@@ -29,8 +31,8 @@ func AddFundsHandler(ws *application.WalletService) http.Handler {
 			}
 			err = ws.HandleFunds(req.Reference, req.Amount, userId)
 			if err != nil {
-				log.Println(err)
-				http.Error(w, "Something went wrong", http.StatusInternalServerError)
+				logger.Printf("error adding funds: %s\n", err)
+				jsonError(w, "something went wrong", http.StatusInternalServerError)
 				return
 			}
 
