@@ -1,5 +1,30 @@
 # wallet-service
 
+## Installation
+
+You need `sqlite3` installed and `curl` if you want to try the examples from bellow.
+
+```shell
+go run main.go
+```
+
+or
+
+```shell
+go build
+```
+
+A Dockerfile is also provided to run the project:
+
+```shell
+git clone git@github.com:zuzuleinen/wallet-service.git
+cd wallet-service
+docker build -t codetest .
+docker run -p 8080:8080 lastbuildcode
+```
+
+## Using the service
+
 Check Health of the Service:
 
 ```shell

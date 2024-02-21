@@ -37,7 +37,7 @@ func run(ctx context.Context, out io.Writer) error {
 	defer cancel()
 
 	cfg := Config{
-		Host:   "localhost",
+		Host:   "0.0.0.0",
 		Port:   "8080",
 		DbName: "test.db",
 	}
