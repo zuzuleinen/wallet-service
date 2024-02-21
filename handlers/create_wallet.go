@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"wallet-service/application"
+	"wallet-service/app"
 )
 
 type createWalletRequest struct {
@@ -17,7 +17,7 @@ type createWalletResponse struct {
 	Balance int64  `json:"balance"`
 }
 
-func CreateWalletHandler(ws *application.WalletService, logger *log.Logger) http.Handler {
+func CreateWalletHandler(ws *app.WalletService, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			var req createWalletRequest

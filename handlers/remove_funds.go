@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"wallet-service/application"
+	"wallet-service/app"
 	"wallet-service/domain"
 )
 
@@ -14,7 +14,7 @@ type removeFundsRequest struct {
 	Reference string `json:"reference"`
 }
 
-func RemoveFundsHandler(ws *application.WalletService) http.Handler {
+func RemoveFundsHandler(ws *app.WalletService) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			userId := r.PathValue("userId")

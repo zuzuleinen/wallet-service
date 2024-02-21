@@ -3,14 +3,14 @@ package handlers
 import (
 	"net/http"
 
-	"wallet-service/application"
+	"wallet-service/app"
 )
 
 type getWalletResponse struct {
 	Balance int64 `json:"balance"`
 }
 
-func GetWalletHandler(ws *application.WalletService) http.Handler {
+func GetWalletHandler(ws *app.WalletService) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			userId := r.PathValue("userId")

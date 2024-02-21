@@ -1,4 +1,4 @@
-package application
+package app
 
 import (
 	"context"
@@ -6,19 +6,19 @@ import (
 	"log"
 	"sync"
 
+	"wallet-service/db"
 	"wallet-service/domain"
-	"wallet-service/infrastructure"
 
 	"github.com/google/uuid"
 )
 
 type WalletService struct {
-	transactionsRepo *infrastructure.TransactionRepository
+	transactionsRepo *db.TransactionRepository
 	doneWG           sync.WaitGroup
 	logger           *log.Logger
 }
 
-func NewWalletService(transactionsRepo *infrastructure.TransactionRepository, logger *log.Logger) *WalletService {
+func NewWalletService(transactionsRepo *db.TransactionRepository, logger *log.Logger) *WalletService {
 	return &WalletService{
 		transactionsRepo: transactionsRepo,
 		logger:           logger,

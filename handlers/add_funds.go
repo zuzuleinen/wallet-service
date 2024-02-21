@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"wallet-service/application"
+	"wallet-service/app"
 )
 
 type addFundsRequest struct {
@@ -13,7 +13,7 @@ type addFundsRequest struct {
 	Reference string `json:"reference"`
 }
 
-func AddFundsHandler(ws *application.WalletService, logger *log.Logger) http.Handler {
+func AddFundsHandler(ws *app.WalletService, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			userId := r.PathValue("userId")

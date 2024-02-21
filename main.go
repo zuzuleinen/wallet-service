@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"wallet-service/application"
+	"wallet-service/app"
+	"wallet-service/db"
 	"wallet-service/handlers"
-	"wallet-service/infrastructure"
 )
 
 type Config struct {
@@ -43,19 +43,19 @@ func run(ctx context.Context, out io.Writer) error {
 	}
 
 	// Init database
-	db, err := infrastructure.InitDatabase(cfg.DbName)
+	database, err := db.InitDatabase(cfg.DbName)
 	if err != nil {
-		return fmt.Errorf("connecting to db: %w", err)
+		return fmt.Errorf("connecting to database: %w", err)
 	}
 	defer func() {
 		log.Println("stopping database")
-		sqlDB, _ := db.DB()
+		sqlDB, _ := database.DB()
 		sqlDB.Close()
 	}()
 
 	// Init logger and WalletService
 	logger := log.New(out, "", log.LstdFlags)
-	ws := application.NewWalletService(infrastructure.NewTransactionRepository(db), logger)
+	ws := app.NewWalletService(db.NewTransactionRepository(database), logger)
 
 	// Start server
 	srv := NewServer(ws, logger)
@@ -89,7 +89,7 @@ func run(ctx context.Context, out io.Writer) error {
 	return nil
 }
 
-func NewServer(ws *application.WalletService, logger *log.Logger) http.Handler {
+func NewServer(ws *app.WalletService, logger *log.Logger) http.Handler {
 	mux := http.NewServeMux()
 	addRoutes(mux, ws, logger)
 
@@ -97,7 +97,7 @@ func NewServer(ws *application.WalletService, logger *log.Logger) http.Handler {
 	return handler
 }
 
-func addRoutes(mux *http.ServeMux, ws *application.WalletService, logger *log.Logger) {
+func addRoutes(mux *http.ServeMux, ws *app.WalletService, logger *log.Logger) {
 	mux.Handle("/health", handlers.HealthHandler(logger))
 	mux.Handle("GET /wallet/{userId}", handlers.GetWalletHandler(ws))
 	mux.Handle("POST /wallet/{userId}", handlers.CreateWalletHandler(ws, logger))
