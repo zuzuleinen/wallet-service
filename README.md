@@ -33,13 +33,15 @@ docker run -p 8080:8080 walletservice
 
 ## Using the service
 
-For simplicity, user ids are simple strings, like `andrei`. Amounts are in cents.
+For simplicity, user ids are simple strings, like `andrei`. Amounts are in cents and always a positive value.
 
-Check Health of the Service:
+**Check Health of the Service**
 
 ```shell
 curl http://localhost:8080/health
 ```
+
+**Create a Wallet**
 
 Create a wallet with amount `100` cents for user with id `andrei`:
 
@@ -47,13 +49,15 @@ Create a wallet with amount `100` cents for user with id `andrei`:
 curl -X POST -H "Content-Type: application/json" -d '{"amount": 100}' http://localhost:8080/wallet/andrei
 ```
 
-Query the current state of a wallet:
+**Query the current state of a wallet**
 
 ```shell
 curl http://localhost:8080/wallet/andrei
 ```
 
-Add funds to a wallet. Make sure the `reference` field is unique:
+**Add funds to a wallet**
+
+Make sure the `reference` field is unique:
 A `reference` contains information about the context in which this amount is added/removed. For
 example: `wonbet-111`, `witraw-222`, where the first part is the event and second it a unique id. I don't do any
 validation for the format, but good when debugging.
@@ -62,7 +66,9 @@ validation for the format, but good when debugging.
 curl -X POST -H "Content-Type: application/json" -d '{"amount": 10,"reference":"wonbet-1"}' http://localhost:8080/add-funds/andrei
 ```
 
-Remove funds from wallet. Make sure the `reference` field is unique:
+**Remove funds from wallet**
+
+Make sure the `reference` field is unique:
 
 ```shell
 curl -X POST -H "Content-Type: application/json" -d '{"amount": 50,"reference":"lostbet-2"}' http://localhost:8080/remove-funds/andrei
