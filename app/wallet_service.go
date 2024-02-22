@@ -2,30 +2,36 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
 
-	"wallet-service/db"
 	"wallet-service/domain"
+	"wallet-service/infra/db"
+	"wallet-service/infra/pubsub"
 
+	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/google/uuid"
 )
 
 type WalletService struct {
+	producer         pulsar.Producer
 	transactionsRepo *db.TransactionRepository
 	doneWG           sync.WaitGroup
 	logger           *log.Logger
 }
 
-func NewWalletService(transactionsRepo *db.TransactionRepository, logger *log.Logger) *WalletService {
+func NewWalletService(producer pulsar.Producer, transactionsRepo *db.TransactionRepository, logger *log.Logger) *WalletService {
 	return &WalletService{
+		producer:         producer,
 		transactionsRepo: transactionsRepo,
 		logger:           logger,
 	}
 }
 
-func (s *WalletService) HandleFunds(reference string, amount int64, userID string) error {
+// HandleFundsWithPulsar send the data to Pulsar broker
+func (s *WalletService) HandleFundsWithPulsar(reference string, amount int64, userID string) error {
 	s.doneWG.Add(1)
 	errChan := make(chan error, 1)
 
@@ -33,17 +39,23 @@ func (s *WalletService) HandleFunds(reference string, amount int64, userID strin
 		defer s.doneWG.Done()
 		defer close(errChan)
 
-		w := s.GetWallet(userID)
-		err := w.AddFunds(amount)
+		data, err := json.Marshal(&pubsub.TransactionPayload{
+			Reference: reference,
+			Amount:    amount,
+			UserID:    userID,
+		})
 		if err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("error marshalling for producer: %s", err)
 			return
 		}
 
-		err = s.transactionsRepo.AddTransaction(uuid.New().String(), userID, reference, amount)
+		_, err = s.producer.Send(context.TODO(), &pulsar.ProducerMessage{
+			Payload: data,
+		})
 		if err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("error producing on pulsar: %s", err)
 		}
+		return
 	}()
 
 	select {

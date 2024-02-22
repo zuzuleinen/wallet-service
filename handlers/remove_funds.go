@@ -30,7 +30,7 @@ func RemoveFundsHandler(ws *app.WalletService) http.Handler {
 				return
 			}
 
-			err = ws.HandleFunds(req.Reference, req.Amount*-1, userId)
+			err = ws.HandleFundsWithPulsar(req.Reference, req.Amount*-1, userId)
 			if err != nil {
 				var negativeBalancerErr *domain.NegativeBalancerErr
 				if errors.As(err, &negativeBalancerErr) {

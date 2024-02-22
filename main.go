@@ -14,8 +14,11 @@ import (
 	"time"
 
 	"wallet-service/app"
-	"wallet-service/db"
 	"wallet-service/handlers"
+	"wallet-service/infra/db"
+	"wallet-service/infra/pubsub"
+
+	"github.com/apache/pulsar-client-go/pulsar"
 )
 
 type Config struct {
@@ -39,14 +42,14 @@ func run(ctx context.Context, out io.Writer, getenv func(string) string) error {
 	// Init app config
 	cfg := Config{
 		Host:   withDefault(getenv("WALLET_HOST"), "0.0.0.0"),
-		Port:   withDefault(getenv("WALLET_PORT"), "8080"),
+		Port:   withDefault(getenv("WALLET_PORT"), "8081"),
 		DbName: withDefault(getenv("WALLET_DB_NAME"), "dev.db"),
 	}
 
 	// Init database
 	database, err := db.InitDatabase(cfg.DbName)
 	if err != nil {
-		return fmt.Errorf("connecting to database: %w", err)
+		return fmt.Errorf("connecting to database: %s", err)
 	}
 	defer func() {
 		log.Println("stopping database")
@@ -54,9 +57,25 @@ func run(ctx context.Context, out io.Writer, getenv func(string) string) error {
 		sqlDB.Close()
 	}()
 
+	// Init Pulsar Client
+	pulsarClient, err := pulsar.NewClient(pulsar.ClientOptions{
+		URL: withDefault(getenv("PULSAR_CLIENT_URL"), "pulsar://localhost:6650"),
+	})
+	if err != nil {
+		log.Fatalf("error creating pulsar client: %s", err)
+	}
+	defer pulsarClient.Close()
+
+	producer, err := pulsarClient.CreateProducer(pulsar.ProducerOptions{
+		Topic: pubsub.TopicTransactions,
+	})
+	if err != nil {
+		log.Fatalf("error creating producer: %s", err)
+	}
+
 	// Init logger and WalletService
 	logger := log.New(out, "", log.LstdFlags)
-	ws := app.NewWalletService(db.NewTransactionRepository(database), logger)
+	ws := app.NewWalletService(producer, db.NewTransactionRepository(database), logger)
 
 	// Start server
 	srv := NewServer(ws, logger)
