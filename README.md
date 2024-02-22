@@ -16,12 +16,6 @@ go build
 ./wallet-service
 ```
 
-To run the tests:
-
-```shell
-go test ./...
-```
-
 A Dockerfile is also provided to run the project:
 
 ```shell
@@ -29,6 +23,12 @@ git clone git@github.com:zuzuleinen/wallet-service.git
 cd wallet-service
 docker build -t walletservice .
 docker run -p 8080:8080 walletservice
+```
+
+## Run the tests
+
+```shell
+go test ./...
 ```
 
 ## Using the service
