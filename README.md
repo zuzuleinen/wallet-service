@@ -9,12 +9,12 @@ docker-compose up -d
 
 2. Start the server locally:
 ```shell
-go run main.go
+go run cmd/rest-api/main.go
 ```
 
-3. Start the background consumer responsible for reading messages into the database:
+3. Start the background consumer responsible for persisting messages from Pulsar into db:
 ```shell
-go run app/services/consumer/main.go
+go run cmd/consumer/main.go
 ```
 
 Benchmark using [hey](https://github.com/rakyll/hey):
