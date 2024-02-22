@@ -1,5 +1,4 @@
 dev.db
 test.db
 wallet-service
-./data/zookeeper
-./data/bookkeeper
+./data

@@ -4,6 +4,9 @@
 
 1. Start Pulsar cluster locally:
 ```shell
+sudo mkdir -p ./data/zookeeper ./data/bookkeeper
+# this step might not be necessary on other than Linux platforms
+sudo chown 10000 -R data
 docker-compose up -d
 ```
 
