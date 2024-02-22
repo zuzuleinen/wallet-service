@@ -41,8 +41,7 @@ func RemoveFundsHandler(ws *app.WalletService) http.Handler {
 				return
 			}
 
-			w.WriteHeader(http.StatusCreated)
-			jsonResponse(w, nil)
+			jsonSuccess(w, "Removed", http.StatusOK)
 		},
 	)
 }
