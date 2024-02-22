@@ -19,7 +19,7 @@ go run cmd/rest-api/main.go
 ```shell
 go run cmd/consumer/main.go
 ```
-You can go with the much faster batch consumer:
+Or, you can go with the much faster batch consumer:
 ```shell
 go run cmd/batch-consumer/main.go
 ```
@@ -29,6 +29,8 @@ Benchmark using [hey](https://github.com/rakyll/hey):
 ```shell
 hey -n 100000 -m POST  -H "Content-Type: application/json" -d '{"amount": 10,"reference":"wonbet-1"}' http://localhost:8081/add-funds/andrei
 ```
+
+On my machine last test was at `6726.2377` requests/sec.
 
 ## Run the tests
 
