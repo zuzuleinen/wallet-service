@@ -3,6 +3,7 @@ networks:
   pulsar:
     driver: bridge
 services:
+  # Start zookeeper
   zookeeper:
     image: apachepulsar/pulsar:latest
     container_name: zookeeper
