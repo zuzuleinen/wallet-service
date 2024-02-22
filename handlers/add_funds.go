@@ -37,7 +37,7 @@ func AddFundsHandler(ws *app.WalletService, logger *log.Logger) http.Handler {
 			}
 
 			w.WriteHeader(http.StatusCreated)
-			jsonResponse(w, nil)
+			jsonSuccess(w, "Created", http.StatusCreated)
 		},
 	)
 }
