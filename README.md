@@ -16,6 +16,12 @@ go build
 ./wallet-service
 ```
 
+To run the tests:
+
+```shell
+go test ./...
+```
+
 A Dockerfile is also provided to run the project:
 
 ```shell

@@ -26,20 +26,21 @@ type Config struct {
 
 func main() {
 	ctx := context.Background()
-	if err := run(ctx, os.Stdout); err != nil {
+	if err := run(ctx, os.Stdout, os.Getenv); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, out io.Writer) error {
+func run(ctx context.Context, out io.Writer, getenv func(string) string) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
+	// Init app config
 	cfg := Config{
-		Host:   "0.0.0.0",
-		Port:   "8080",
-		DbName: "test.db",
+		Host:   withDefault(getenv("WALLET_HOST"), "0.0.0.0"),
+		Port:   withDefault(getenv("WALLET_PORT"), "8080"),
+		DbName: withDefault(getenv("WALLET_DB_NAME"), "dev.db"),
 	}
 
 	// Init database
@@ -87,6 +88,14 @@ func run(ctx context.Context, out io.Writer) error {
 	}()
 	wg.Wait()
 	return nil
+}
+
+// withDefault returns want if not empty else will return default def
+func withDefault(want, def string) string {
+	if want != "" {
+		return want
+	}
+	return def
 }
 
 func NewServer(ws *app.WalletService, logger *log.Logger) http.Handler {
