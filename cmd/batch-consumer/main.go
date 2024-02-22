@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync/atomic"
 	"time"
 
 	"wallet-service/infra/db"
@@ -26,8 +25,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("connecting to database: %s", err)
 	}
-	transactionsRepo := db.NewTransactionRepository(database)
-	log.Println("database started")
 
 	defer func() {
 		log.Println("stopping database")
@@ -52,13 +49,10 @@ func main() {
 
 	defer consumer.Close()
 
-	// keep message stats
-	msgReceived := int64(0)
-	bytesReceived := int64(0)
-
-	// print stats of the consume rate every 10 secs
-	tick := time.NewTicker(10 * time.Second)
+	tick := time.NewTicker(2 * time.Second)
 	defer tick.Stop()
+
+	var ts []db.Transaction
 
 	for {
 		select {
@@ -74,33 +68,45 @@ func main() {
 				break
 			}
 
-			err = transactionsRepo.AddTransactionWithCtx(ctx,
-				uuid.New().String(),
-				msg.UserID,
-				msg.Reference,
-				msg.Amount,
-			)
-			if err != nil {
-				log.Printf("error saving to db: %s\n", err)
-				break
-			}
+			ts = append(ts, db.Transaction{
+				ID:        uuid.New().String(),
+				Reference: msg.Reference,
+				UserID:    msg.UserID,
+				Amount:    msg.Amount,
+				CreatedAt: time.Now(),
+			})
 
-			// measure
-			msgReceived++
-			bytesReceived += int64(len(cm.Message.Payload()))
-
-			err = consumer.Ack(cm.Message)
+			err = consumer.AckID(cm.ID()) // todo
 			if err != nil {
-				log.Printf("error ack message: %s", cm.Message.ID())
+				log.Printf("error on ACK: %s", err)
 			}
 		case <-tick.C:
-			currentMsgReceived := atomic.SwapInt64(&msgReceived, 0)
-			currentBytesReceived := atomic.SwapInt64(&bytesReceived, 0)
-			msgRate := float64(currentMsgReceived) / float64(10)
-			bytesRate := float64(currentBytesReceived) / float64(10)
+			if len(ts) > 0 {
+				chunkSize := 300
+				for i := 0; i < len(ts); i += chunkSize {
+					end := i + chunkSize
+					if end > len(ts) {
+						end = len(ts)
+					}
+					chunk := ts[i:end]
 
-			log.Printf(`Stats - Consume rate: %6.1f msg/s - %6.1f Mbps`,
-				msgRate, bytesRate*8/1024/1024)
+					tx := database.Begin()
+					if tx.Error != nil {
+						panic(tx.Error)
+					}
+
+					fmt.Println("flush", len(chunk))
+					if err := tx.Create(&chunk).Error; err != nil {
+						tx.Rollback()
+						panic(err)
+					}
+
+					tx.Commit()
+				}
+				ts = make([]db.Transaction, 0)
+			} else {
+				fmt.Println("Nothing to flush...", len(ts))
+			}
 		case <-ctx.Done():
 			fmt.Println("Context is done. Exiting...")
 			return
