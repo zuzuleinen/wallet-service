@@ -72,6 +72,7 @@ func run(ctx context.Context, out io.Writer, getenv func(string) string) error {
 	if err != nil {
 		log.Fatalf("error creating producer: %s", err)
 	}
+	defer producer.Close()
 
 	// Init logger and WalletService
 	logger := log.New(out, "", log.LstdFlags)
