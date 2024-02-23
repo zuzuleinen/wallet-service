@@ -30,7 +30,7 @@ Benchmark using [hey](https://github.com/rakyll/hey):
 hey -n 100000 -m POST  -H "Content-Type: application/json" -d '{"amount": 10,"reference":"wonbet-1"}' http://localhost:8081/add-funds/andrei
 ```
 
-On my machine last test was at `6726.2377` requests/sec.
+On my machine last test was at `58201.7084` requests/sec.
 
 ## Run the tests
 
