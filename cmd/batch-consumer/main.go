@@ -25,6 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("connecting to database: %s", err)
 	}
+	database = database.WithContext(ctx)
 
 	defer func() {
 		log.Println("stopping database")
@@ -49,7 +50,7 @@ func main() {
 
 	defer consumer.Close()
 
-	tick := time.NewTicker(2 * time.Second)
+	tick := time.NewTicker(1 * time.Second)
 	defer tick.Stop()
 
 	var ts []db.Transaction
@@ -82,7 +83,7 @@ func main() {
 			}
 		case <-tick.C:
 			if len(ts) > 0 {
-				chunkSize := 300
+				chunkSize := 1000
 				for i := 0; i < len(ts); i += chunkSize {
 					end := i + chunkSize
 					if end > len(ts) {
@@ -92,13 +93,13 @@ func main() {
 
 					tx := database.Begin()
 					if tx.Error != nil {
-						panic(tx.Error)
+						log.Println(tx.Error)
 					}
 
 					fmt.Println("flush", len(chunk))
 					if err := tx.Create(&chunk).Error; err != nil {
 						tx.Rollback()
-						panic(err)
+						log.Println(err)
 					}
 
 					tx.Commit()
