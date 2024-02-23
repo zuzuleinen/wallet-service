@@ -49,12 +49,13 @@ func (s *WalletService) HandleFundsWithPulsar(reference string, amount int64, us
 			return
 		}
 
-		_, err = s.producer.Send(context.TODO(), &pulsar.ProducerMessage{
+		s.producer.SendAsync(context.TODO(), &pulsar.ProducerMessage{
 			Payload: data,
+		}, func(id pulsar.MessageID, message *pulsar.ProducerMessage, err error) {
+			if err != nil {
+				errChan <- fmt.Errorf("error on SendAsync: %s", err)
+			}
 		})
-		if err != nil {
-			errChan <- fmt.Errorf("error producing on pulsar: %s", err)
-		}
 		return
 	}()
 
