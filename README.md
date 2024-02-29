@@ -1,8 +1,23 @@
 # wallet-service
 
-### Running with a local Pulsar cluster
+## About
+
+This projects showcases an HTTP service that acts as a Wallet Service in a microservice architecture for a betting
+platform.
+
+Funds in a wallet can increase (e.g. by winning a bet, depositing
+money, getting a bonus etc.) or decrease (e.g. by placing a bet, withdrawing money etc.).
+
+This sole responsibility is to store the
+funds and provide the functionality for manipulating the balance.
+
+The service should be able to gracefully shut down and be performant being a part of critical and time-sensitive
+workflows.
+
+## Running the project
 
 1. Start Pulsar cluster locally:
+
 ```shell
 sudo mkdir -p ./data/zookeeper ./data/bookkeeper
 # this step might not be necessary on other than Linux platforms
@@ -11,15 +26,13 @@ docker-compose up -d
 ```
 
 2. Start the server locally:
+
 ```shell
 go run cmd/rest-api/main.go
 ```
 
 3. Start the background consumer responsible for persisting messages from Pulsar into db:
-```shell
-go run cmd/consumer/main.go
-```
-Or, you can go with the much faster batch consumer:
+
 ```shell
 go run cmd/batch-consumer/main.go
 ```
@@ -38,7 +51,7 @@ On my machine last test was at `58201.7084` requests/sec.
 go test ./...
 ```
 
-## Using the service
+## Sample requests
 
 For simplicity, user ids are simple strings, like `andrei`. Amounts are in cents and always a positive value.
 
