@@ -29,7 +29,7 @@ func AddFundsHandler(ws *app.WalletService, logger *log.Logger) http.Handler {
 				jsonError(w, "`amount` must be positive", http.StatusBadRequest)
 				return
 			}
-			err = ws.HandleFundsWithPulsar(req.Reference, req.Amount, userId)
+			err = ws.HandleFunds(req.Reference, req.Amount, userId)
 			if err != nil {
 				logger.Printf("error adding funds: %s\n", err)
 				jsonError(w, "something went wrong", http.StatusInternalServerError)

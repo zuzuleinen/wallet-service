@@ -28,8 +28,8 @@ func NewWalletService(producer pulsar.Producer, transactionsRepo *db.Transaction
 	}
 }
 
-// HandleFundsWithPulsar send the data to Pulsar broker
-func (s *WalletService) HandleFundsWithPulsar(reference string, amount int64, userID string) error {
+// HandleFunds send the data to Pulsar broker
+func (s *WalletService) HandleFunds(reference string, amount int64, userID string) error {
 	data, err := json.Marshal(&pubsub.TransactionPayload{
 		Reference: reference,
 		Amount:    amount,
