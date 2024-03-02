@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sync"
 
 	"wallet-service/domain"
 	"wallet-service/infra/db"
@@ -18,7 +17,6 @@ import (
 type WalletService struct {
 	producer         pulsar.Producer
 	transactionsRepo *db.TransactionRepository
-	doneWG           sync.WaitGroup
 	logger           *log.Logger
 }
 
@@ -32,37 +30,24 @@ func NewWalletService(producer pulsar.Producer, transactionsRepo *db.Transaction
 
 // HandleFundsWithPulsar send the data to Pulsar broker
 func (s *WalletService) HandleFundsWithPulsar(reference string, amount int64, userID string) error {
-	s.doneWG.Add(1)
-	errChan := make(chan error, 1)
-
-	go func() {
-		defer s.doneWG.Done()
-		defer close(errChan)
-
-		data, err := json.Marshal(&pubsub.TransactionPayload{
-			Reference: reference,
-			Amount:    amount,
-			UserID:    userID,
-		})
-		if err != nil {
-			errChan <- fmt.Errorf("error marshalling for producer: %s", err)
-			return
-		}
-
-		s.producer.SendAsync(context.TODO(), &pulsar.ProducerMessage{
-			Payload: data,
-		}, func(id pulsar.MessageID, message *pulsar.ProducerMessage, err error) {
-			if err != nil {
-				errChan <- fmt.Errorf("error on SendAsync: %s", err)
-			}
-		})
-		return
-	}()
-
-	select {
-	case err := <-errChan:
-		return err
+	data, err := json.Marshal(&pubsub.TransactionPayload{
+		Reference: reference,
+		Amount:    amount,
+		UserID:    userID,
+	})
+	if err != nil {
+		return fmt.Errorf("error marshalling for producer: %s", err)
 	}
+
+	// todo use Send Async
+	_, err = s.producer.Send(context.TODO(), &pulsar.ProducerMessage{
+		Payload: data,
+	})
+	if err != nil {
+		return fmt.Errorf("error publishing message: %s", err)
+	}
+
+	return nil
 }
 
 func (s *WalletService) HasWallet(userID string) bool {
@@ -80,50 +65,14 @@ func (s *WalletService) GetWallet(userID string) *domain.Wallet {
 }
 
 func (s *WalletService) CreateWallet(userID string, amount int64) (*domain.Wallet, error) {
-	s.doneWG.Add(1)
-
-	walletChan := make(chan *domain.Wallet, 1)
-	errChan := make(chan error, 1)
-
-	go func() {
-		defer s.doneWG.Done()
-
-		w := s.GetWallet(userID)
-		err := w.AddFunds(amount)
-		if err != nil {
-			errChan <- err
-			close(errChan)
-		}
-
-		if err = s.transactionsRepo.AddTransaction(uuid.New().String(), userID, fmt.Sprintf("initialTopup-%s", userID), amount); err != nil {
-			errChan <- err
-			close(errChan)
-		}
-		walletChan <- s.GetWallet(userID)
-		close(walletChan)
-	}()
-
-	select {
-	case wallet := <-walletChan:
-		return wallet, nil
-	case err := <-errChan:
-		return nil, err
+	w := s.GetWallet(userID)
+	err := w.AddFunds(amount)
+	if err != nil {
+		return nil, fmt.Errorf("error adding funds: %s", err)
 	}
-}
 
-func (s *WalletService) Stop(ctx context.Context) {
-	s.logger.Println("waiting for wallet service to finish")
-
-	doneChan := make(chan struct{})
-	go func() {
-		s.doneWG.Wait()
-		close(doneChan)
-	}()
-
-	select {
-	case <-ctx.Done():
-		s.logger.Println("context done earlier")
-	case <-doneChan:
-		s.logger.Println("wallet service stopped")
+	if err = s.transactionsRepo.AddTransaction(uuid.New().String(), userID, fmt.Sprintf("initialTopup-%s", userID), amount); err != nil {
+		return nil, fmt.Errorf("error adding transaction: %s", err)
 	}
+	return w, nil
 }

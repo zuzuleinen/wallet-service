@@ -102,9 +102,6 @@ func run(ctx context.Context, out io.Writer, getenv func(string) string) error {
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
 			fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
 		}
-		walletServiceShutdownCtx, cancelWallet := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancelWallet()
-		ws.Stop(walletServiceShutdownCtx)
 	}()
 	wg.Wait()
 	return nil
