@@ -67,7 +67,8 @@ func run(ctx context.Context, out io.Writer, getenv func(string) string) error {
 	defer pulsarClient.Close()
 
 	producer, err := pulsarClient.CreateProducer(pulsar.ProducerOptions{
-		Topic: pubsub.TopicTransactions,
+		Topic:              pubsub.TopicTransactions,
+		MaxPendingMessages: 100_000_000,
 	})
 	if err != nil {
 		log.Fatalf("error creating producer: %s", err)
