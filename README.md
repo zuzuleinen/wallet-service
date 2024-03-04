@@ -2,7 +2,7 @@
 
 ## About
 
-This projects showcases an HTTP service that acts as a Wallet Service in a microservice architecture for a betting
+This project showcases an HTTP service that acts as a Wallet Service in a microservice architecture for a betting
 platform.
 
 Funds in a wallet can increase (e.g. by winning a bet, depositing
